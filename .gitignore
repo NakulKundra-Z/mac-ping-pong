@@ -1,0 +1,5 @@
+# Compiled Output
+build/
+
+# macOS Files
+.DS_Store
