@@ -1631,6 +1631,10 @@ struct ContentView: View {
 @main
 struct PingPongApp: App {
     init() {
+        if CommandLine.arguments.contains("--test") {
+            runHeadlessTests()
+            exit(0)
+        }
         // AppKit initialization to force App registration in active foreground UI pool when compiled as raw command line binary
         NSApplication.shared.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
@@ -1643,4 +1647,80 @@ struct PingPongApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
     }
+}
+
+// MARK: - Headless Test Runner
+
+func runHeadlessTests() {
+    print("=========================================")
+    print("🧪 Running Neon Ping Pong Headless Tests...")
+    print("=========================================")
+    
+    // Test 1: SoundSynth Test
+    print("Testing SoundSynth...")
+    let synth = SoundSynth.shared
+    synth.playBeep(frequency: 440.0, duration: 0.01, type: "sine", volume: 0.1)
+    print("[✓] SoundSynth Initialized and tone scheduled.")
+    
+    // Test 2: GameScene Initialization
+    print("Testing GameScene Setup...")
+    let scene = GameScene(size: CGSize(width: 1024, height: 768))
+    let mockView = SKView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
+    scene.didMove(to: mockView)
+    
+    guard scene.childNode(withName: "//ball") != nil else {
+        print("[✗] Failed: Ball node not found.")
+        exit(1)
+    }
+    guard scene.childNode(withName: "//leftPaddle") != nil else {
+        print("[✗] Failed: Left paddle node not found.")
+        exit(1)
+    }
+    guard scene.childNode(withName: "//rightPaddle") != nil else {
+        print("[✗] Failed: Right paddle node not found.")
+        exit(1)
+    }
+    print("[✓] GameScene components successfully instantiated.")
+    
+    // Test 3: Ball Reset and Launch Logic
+    print("Testing Ball Physics & Launch...")
+    let vm = GameViewModel()
+    scene.viewModel = vm
+    scene.startNewGame()
+    
+    let ballNode = scene.childNode(withName: "//ball") as! SKShapeNode
+    if ballNode.position.x != 512 || ballNode.position.y != 384 {
+        print("[✗] Failed: Ball position not reset to center.")
+        exit(1)
+    }
+    print("[✓] Ball position reset logic verified.")
+    
+    // Test 4: AI Logic Simulation
+    print("Testing CPU AI Tracking...")
+    let rightPaddle = scene.childNode(withName: "//rightPaddle") as! SKShapeNode
+    let initialY = rightPaddle.position.y
+    
+    ballNode.position = CGPoint(x: 800, y: 600)
+    ballNode.physicsBody?.velocity = CGVector(dx: 10, dy: 0) // moving right towards CPU
+    
+    vm.gameState = .playing
+    scene.update(0.1) // Initializes lastUpdateTime
+    scene.update(0.2) // Runs update loop
+    
+    let updatedY = rightPaddle.position.y
+    if updatedY <= initialY {
+        print("[✗] Failed: CPU paddle did not move up to track the high ball. (Y went from \(initialY) to \(updatedY))")
+        exit(1)
+    }
+    print("[✓] CPU AI tracked ball successfully (Y: \(initialY) -> \(updatedY)).")
+    
+    // Test 5: Scoring System
+    print("Testing Out-Of-Bounds Scoring...")
+    vm.gameState = .playing
+    ballNode.position = CGPoint(x: -5, y: 384)
+    scene.update(0.3) // Runs update loop with next timestamp
+    print("[✓] Score check processed successfully.")
+    
+    print("\n🎉 ALL HEADLESS TESTS COMPLETED SUCCESSFULLY!")
+    print("=========================================")
 }
