@@ -480,7 +480,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // Play launch sound
         SoundSynth.shared.playBeep(frequency: 880, duration: 0.1, type: viewModel.soundType, volume: viewModel.soundVolume)
         
-        let speed = CGFloat(viewModel.ballSpeed)
+        let speed = CGFloat(viewModel.ballSpeed) * 60.0
         let angleLimit = 40.0 * CGFloat.pi / 180.0
         let angle = CGFloat.random(in: -angleLimit...angleLimit)
         
@@ -719,7 +719,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         if abs(diff) > aiDeadZone {
             let direction: CGFloat = diff > 0 ? 1.0 : -1.0
             // Lerp-like velocity smoothing close to target Y
-            let moveRate = min(aiMaxSpeed, abs(diff) * 0.15)
+            let moveRate = min(aiMaxSpeed, abs(diff) * 0.15) * CGFloat(dt * 60.0)
             rightPaddle.position.y = max(70, min(size.height - 70, rightPaddle.position.y + direction * moveRate))
         }
     }
@@ -729,8 +729,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let speed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
         
         // If ball is moving fast but has almost zero vertical motion, force a bounce angle
-        if speed > 2.0 && abs(velocity.dy) < 0.6 {
-            let randomForceY: CGFloat = Bool.random() ? 1.5 : -1.5
+        if speed > 120.0 && abs(velocity.dy) < 36.0 {
+            let randomForceY: CGFloat = Bool.random() ? 90.0 : -90.0
             ball.physicsBody?.velocity = CGVector(dx: velocity.dx, dy: randomForceY)
         }
     }
@@ -889,7 +889,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             let currentSpeed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
             
             // Accelerate slightly on each paddle bounce
-            let nextSpeed = min(currentSpeed + CGFloat(viewModel.ballSpeedIncrement), CGFloat(viewModel.maxBallSpeed))
+            let nextSpeed = min(currentSpeed + CGFloat(viewModel.ballSpeedIncrement * 60.0), CGFloat(viewModel.maxBallSpeed * 60.0))
             
             // Bounce direction depends on which paddle was hit
             let dirX: CGFloat = paddle.name == "leftPaddle" ? 1.0 : -1.0
@@ -934,7 +934,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // Retrieve current ball velocity and add acceleration
             guard let velocity = ballNode.physicsBody?.velocity else { return }
             let currentSpeed = sqrt(velocity.dx * velocity.dx + velocity.dy * velocity.dy)
-            let nextSpeed = min(currentSpeed + CGFloat(viewModel.ballSpeedIncrement * 0.5), CGFloat(viewModel.maxBallSpeed))
+            let nextSpeed = min(currentSpeed + CGFloat(viewModel.ballSpeedIncrement * 0.5 * 60.0), CGFloat(viewModel.maxBallSpeed * 60.0))
             
             // Add slight randomness to bounce off rotating obstacle
             let normalX = contact.contactNormal.dx
